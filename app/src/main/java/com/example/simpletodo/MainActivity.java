@@ -1,7 +1,8 @@
 package com.example.simpletodo;
 
-import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +19,12 @@ import java.util.ArrayList;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    private static final String TAG_POS = "position";
+    private static final String TAG_ITEM = "item";
+
+    // REQUEST_CODE can be any value we like, used to determine the result type later
+    private final int REQUEST_CODE = 20;
 
     ArrayList<String> items;
     ArrayAdapter<String> itemsAdapter;
@@ -37,12 +44,14 @@ public class MainActivity extends ActionBarActivity {
         lvItems.setAdapter(itemsAdapter);
 
         // setup listener for deleting item on long click
-        setupListViewListener();
+        setupListViewDeleteListener();
 
+        // setup listener for editing item on click
+        setupListViewEditListener();
     }
 
     // delete item also deletes from the file
-    private void setupListViewListener() {
+    private void setupListViewDeleteListener() {
         lvItems.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
             public boolean onItemLongClick(AdapterView<?> adapter, View item, int pos, long id) {
@@ -56,6 +65,49 @@ public class MainActivity extends ActionBarActivity {
 
         });
 
+    }
+
+    private void setupListViewEditListener () {
+        lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View item, int pos, long id) {
+
+                //Toast.makeText(getApplicationContext(), "Item is" + pos, Toast.LENGTH_LONG).show();
+
+                // Starting single contact activity
+                Intent in = new Intent(getApplicationContext(),
+                        EditTodo.class);
+                // Pass extras to the calling activity for the position of the item and the item
+                in.putExtra(TAG_POS, pos);
+                in.putExtra(TAG_ITEM, items.get(pos).toString());
+
+                // Call start activity for result to get the updated item
+                startActivityForResult(in,REQUEST_CODE);
+
+            }
+        });
+
+    }
+
+    // ActivityOne.java, time to handle the result of the sub-activity
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // REQUEST_CODE is defined above
+        if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
+            // Extract name value from result extras
+            String name = data.getExtras().getString("name");
+
+            // Get the extra from edit activity
+            int position=data.getIntExtra(TAG_POS,0);
+            String item=  data.getStringExtra(TAG_ITEM);
+
+            // Update the item in the array and called notify for adapter
+            items.set(position,item);
+            itemsAdapter.notifyDataSetChanged();
+
+            // Toast the name to display temporarily on screen
+            //Toast.makeText(this, "pos is "+position, Toast.LENGTH_SHORT).show();
+        }
     }
 
     // Add new item, adds to the file
